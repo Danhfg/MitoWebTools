@@ -1,0 +1,59 @@
+/* ===================================
+   MitoWebTools - Estilos Compartilhados
+   =================================== */
+
+/* Dropzone active state (usado em RSCU, Synteny e D-Loop) */
+.dropzone-active {
+    border-color: #3b82f6 !important;
+    background-color: #eff6ff !important;
+}
+
+/* Oculta scrollbar mantendo rolagem (usado em listas de arquivos) */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* ===================================
+   Animações do Hero (index.html)
+   =================================== */
+
+@keyframes flex-pulse-1 {
+    0%, 100% { flex: 1; }
+    50% { flex: 3; }
+}
+
+@keyframes flex-pulse-2 {
+    0%, 100% { flex: 2; }
+    50% { flex: 0.5; }
+}
+
+@keyframes flex-pulse-3 {
+    0%, 100% { flex: 1.5; }
+    50% { flex: 0.8; }
+}
+
+@keyframes flex-pulse-4 {
+    0%, 100% { flex: 0.5; }
+    50% { flex: 2; }
+}
+
+.anim-f1 {
+    animation: flex-pulse-1 3s ease-in-out infinite;
+}
+
+.anim-f2 {
+    animation: flex-pulse-2 4s ease-in-out infinite;
+}
+
+.anim-f3 {
+    animation: flex-pulse-3 3.5s ease-in-out infinite;
+}
+
+.anim-f4 {
+    animation: flex-pulse-4 4.5s ease-in-out infinite;
+}
