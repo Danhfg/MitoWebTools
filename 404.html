@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Not Found - MitoTools Web</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="src/js/tailwind-config.js"></script>
+    <script src="src/js/theme.js"></script>
+</head>
+
+<body
+    class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 font-sans flex flex-col min-h-screen selection:bg-primary-500 selection:text-white transition-colors duration-200">
+
+    <div id="header-root"></div>
+
+    <main class="flex-grow flex items-center justify-center px-4">
+        <div class="text-center space-y-6">
+            <div class="text-8xl font-extrabold text-gray-200 dark:text-gray-700">404</div>
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Page Not Found</h1>
+            <p class="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+                The page you are looking for doesn't exist or has been moved.
+            </p>
+            <a href="index.html"
+                class="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg font-medium shadow-lg shadow-primary-500/30 transition-all hover:-translate-y-1">
+                <i class="fa-solid fa-arrow-left"></i> Back to Home
+            </a>
+        </div>
+    </main>
+
+    <div id="footer-root"></div>
+
+    <script src="src/js/components/header.js"></script>
+    <script src="src/js/components/footer.js"></script>
+    <script>
+        initHeader('');
+        initFooter();
+        initThemeToggle();
+    </script>
+</body>
+
+</html>
