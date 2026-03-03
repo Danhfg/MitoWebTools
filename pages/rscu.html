@@ -34,7 +34,8 @@
         <div class="mb-8">
             <h1 class="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">RSCU Charts</h1>
             <p class="text-gray-500 dark:text-gray-400 mt-2 max-w-3xl">Generate interactive charts to compare Relative
-                Synonymous Codon Usage (RSCU) across multiple species. Upload your TSV files below.</p>
+                Synonymous Codon Usage (RSCU) across multiple species. Upload pre-processed files or calculate directly
+                from FASTA sequences.</p>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -45,8 +46,36 @@
                 <div
                     class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 transition-colors duration-200">
                     <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                        <i class="fa-solid fa-cloud-arrow-up text-primary-500 dark:text-primary-400"></i> File Upload
+                        <i class="fa-solid fa-cloud-arrow-up text-primary-500 dark:text-primary-400"></i> Input Mode
                     </h2>
+
+                    <!-- Mode Toggle -->
+                    <div id="modeToggle" class="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1 mb-4">
+                        <button type="button" data-mode="preprocessed"
+                            class="mode-btn flex-1 text-xs font-semibold py-2 px-3 rounded-md transition-all duration-200 bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm">
+                            <i class="fa-solid fa-table mr-1"></i> Pre-processed
+                        </button>
+                        <button type="button" data-mode="fasta"
+                            class="mode-btn flex-1 text-xs font-semibold py-2 px-3 rounded-md transition-all duration-200 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+                            <i class="fa-solid fa-dna mr-1"></i> FASTA
+                        </button>
+                    </div>
+
+                    <!-- Genetic Code Selector (FASTA mode only) -->
+                    <div id="geneticCodeSection" class="mb-4 hidden">
+                        <label for="geneticCodeSelect"
+                            class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+                            <i class="fa-solid fa-code mr-1"></i> Genetic Code Table
+                        </label>
+                        <select id="geneticCodeSelect"
+                            class="w-full text-xs bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors">
+                            <!-- Options populated by JS -->
+                        </select>
+                        <p class="text-[10px] text-gray-400 dark:text-gray-500 mt-1">NCBI Translation Table for your
+                            organism.</p>
+                    </div>
+
+
 
                     <!-- Dropzone -->
                     <div id="dropzone"
@@ -54,11 +83,13 @@
                         <input type="file" id="fileInput" multiple accept=".tsv,.csv,.txt" class="hidden">
                         <div
                             class="w-12 h-12 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-300 rounded-full flex items-center justify-center text-xl">
-                            <i class="fa-regular fa-folder-open"></i>
+                            <i id="dropzoneIcon" class="fa-regular fa-folder-open"></i>
                         </div>
                         <div>
-                            <p class="text-sm font-medium text-gray-700 dark:text-gray-200">Click or drag & drop</p>
-                            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">TSV, CSV or TXT only</p>
+                            <p id="dropzoneText" class="text-sm font-medium text-gray-700 dark:text-gray-200">Click or
+                                drag & drop</p>
+                            <p id="dropzoneHint" class="text-xs text-gray-400 dark:text-gray-500 mt-1">TSV, CSV or TXT
+                                only</p>
                         </div>
                     </div>
                 </div>
@@ -91,7 +122,7 @@
                     class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 border-dashed h-full min-h-[500px] flex flex-col items-center justify-center text-gray-400 transition-colors duration-200">
                     <i class="fa-solid fa-chart-area text-6xl mb-4 text-gray-200 dark:text-gray-600"></i>
                     <p class="text-lg font-medium text-gray-500 dark:text-gray-400">No data processed</p>
-                    <p class="text-sm text-gray-400 dark:text-gray-500 max-w-md text-center mt-2">Add your TSV files on
+                    <p class="text-sm text-gray-400 dark:text-gray-500 max-w-md text-center mt-2">Add your files on
                         the sidebar and click "Generate" to view results here.</p>
                 </div>
 
@@ -122,11 +153,13 @@
     <!-- Shared Components -->
     <script src="../src/js/components/header.js"></script>
     <script src="../src/js/components/footer.js"></script>
+    <!-- RSCU Calculator Module -->
+    <script src="../src/js/utils/rscu-calculator.js"></script>
     <!-- Page-specific Script -->
     <script src="../src/js/pages/rscu.js"></script>
     <script>
         initHeader('rscu', '../');
-        initFooter();
+        initFooter('../');
         initThemeToggle();
     </script>
 </body>

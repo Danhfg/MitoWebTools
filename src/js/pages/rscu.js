@@ -8,8 +8,15 @@ const resultsSection = document.getElementById('resultsSection');
 const emptyState = document.getElementById('emptyState');
 const plotContainer = document.getElementById('plotContainer');
 const resetBtn = document.getElementById('resetBtn');
+const modeToggle = document.getElementById('modeToggle');
+const geneticCodeSection = document.getElementById('geneticCodeSection');
+const geneticCodeSelect = document.getElementById('geneticCodeSelect');
+const dropzoneText = document.getElementById('dropzoneText');
+const dropzoneHint = document.getElementById('dropzoneHint');
+const dropzoneIcon = document.getElementById('dropzoneIcon');
 
 let selectedFiles = [];
+let currentMode = 'preprocessed'; // 'preprocessed' or 'fasta'
 
 // Amino acid full names mapping
 const aaMap = {
@@ -22,7 +29,64 @@ const aaMap = {
 // Colors for the stacked bars based on the codon's index for that amino acid
 const palette = ['#5b8dcb', '#d85335', '#8bb95b', '#7c539f', '#52b0c4', '#e8a946'];
 
-// Event Listeners for File Selection
+// ─── Initialize Genetic Code Selector ────────────────────────────────────────
+function initGeneticCodeSelector() {
+    if (typeof RSCUCalculator !== 'undefined') {
+        const codes = RSCUCalculator.getAvailableGeneticCodes();
+        geneticCodeSelect.innerHTML = '';
+        codes.forEach(code => {
+            const opt = document.createElement('option');
+            opt.value = code.id;
+            opt.textContent = `${code.id}. ${code.name}`;
+            // Default to Vertebrate Mitochondrial (2)
+            if (code.id === 2) opt.selected = true;
+            geneticCodeSelect.appendChild(opt);
+        });
+    }
+}
+initGeneticCodeSelector();
+
+// ─── Mode Toggle Logic ──────────────────────────────────────────────────────
+const modeBtns = modeToggle.querySelectorAll('.mode-btn');
+modeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        const mode = btn.getAttribute('data-mode');
+        if (mode === currentMode) return;
+        currentMode = mode;
+
+        // Reset files when switching mode
+        selectedFiles = [];
+        updateFileList();
+
+        // Update button styles
+        modeBtns.forEach(b => {
+            if (b.getAttribute('data-mode') === mode) {
+                b.classList.add('bg-white', 'dark:bg-gray-600', 'text-gray-900', 'dark:text-white', 'shadow-sm');
+                b.classList.remove('text-gray-500', 'dark:text-gray-400');
+            } else {
+                b.classList.remove('bg-white', 'dark:bg-gray-600', 'text-gray-900', 'dark:text-white', 'shadow-sm');
+                b.classList.add('text-gray-500', 'dark:text-gray-400');
+            }
+        });
+
+        // Show/hide FASTA-specific options
+        if (mode === 'fasta') {
+            geneticCodeSection.classList.remove('hidden');
+            fileInput.accept = '.fasta,.fa,.fna,.fas,.txt';
+            dropzoneHint.textContent = 'FASTA, FA, FNA or FAS files';
+            dropzoneIcon.className = 'fa-solid fa-dna';
+        } else {
+            geneticCodeSection.classList.add('hidden');
+            fileInput.accept = '.tsv,.csv,.txt';
+            dropzoneHint.textContent = 'TSV, CSV or TXT only';
+            dropzoneIcon.className = 'fa-regular fa-folder-open';
+        }
+    });
+});
+
+
+
+// ─── Event Listeners for File Selection ─────────────────────────────────────
 dropzone.addEventListener('click', () => {
     fileInput.click();
 });
@@ -58,20 +122,24 @@ resetBtn.addEventListener('click', () => {
 generateBtn.addEventListener('click', async () => {
     if (selectedFiles.length === 0) return;
 
-    // Read and parse all files
-    const parsedData = [];
-    for (const file of selectedFiles) {
-        const text = await file.text();
-        const results = Papa.parse(text, { delimiter: '\t', skipEmptyLines: true });
-        parsedData.push({ file, data: results.data });
+    if (currentMode === 'fasta') {
+        await generateFromFasta();
+    } else {
+        await generateFromPreprocessed();
     }
-
-    generatePlots(parsedData);
 });
 
+// ─── File Handling ──────────────────────────────────────────────────────────
+
+const PREPROCESSED_EXTENSIONS = ['.tsv', '.csv', '.txt'];
+const FASTA_EXTENSIONS = ['.fasta', '.fa', '.fna', '.fas', '.txt'];
+
 function handleFiles(files) {
+    const validExtensions = currentMode === 'fasta' ? FASTA_EXTENSIONS : PREPROCESSED_EXTENSIONS;
+
     for (const file of files) {
-        if (file.name.endsWith('.tsv') || file.name.endsWith('.csv') || file.name.endsWith('.txt')) {
+        const ext = '.' + file.name.split('.').pop().toLowerCase();
+        if (validExtensions.includes(ext)) {
             // Check if not already added
             if (!selectedFiles.find(f => f.name === file.name)) {
                 selectedFiles.push(file);
@@ -92,8 +160,10 @@ function updateFileList() {
         selectedFiles.forEach((file, index) => {
             const li = document.createElement('li');
             li.className = "flex justify-between items-center bg-gray-50 border border-gray-100 rounded px-3 py-2 text-sm";
+
+            const iconClass = currentMode === 'fasta' ? 'fa-solid fa-dna' : 'fa-solid fa-file-csv';
             li.innerHTML = `
-                <span class="truncate text-gray-700 w-3/4" title="${file.name}"><i class="fa-solid fa-file-csv text-gray-400 mr-2"></i>${file.name}</span>
+                <span class="truncate text-gray-700 w-3/4" title="${file.name}"><i class="${iconClass} text-gray-400 mr-2"></i>${file.name}</span>
                 <button class="remove-file text-red-500 hover:text-red-700 transition-colors" data-index="${index}"><i class="fa-solid fa-xmark pointer-events-none"></i></button>
             `;
             filesUl.appendChild(li);
@@ -114,6 +184,59 @@ function updateFileList() {
         if (fileCount) fileCount.textContent = '0';
     }
 }
+
+// ─── Generate from Pre-processed (existing pipeline) ────────────────────────
+
+async function generateFromPreprocessed() {
+    const parsedData = [];
+    for (const file of selectedFiles) {
+        const text = await file.text();
+        const results = Papa.parse(text, { delimiter: '\t', skipEmptyLines: true });
+        parsedData.push({ file, data: results.data });
+    }
+    generatePlots(parsedData);
+}
+
+// ─── Generate from FASTA (new pipeline) ─────────────────────────────────────
+
+async function generateFromFasta() {
+    const tableId = parseInt(geneticCodeSelect.value);
+
+    const allParsed = [];
+
+    for (const file of selectedFiles) {
+        const text = await file.text();
+        try {
+            const data = RSCUCalculator.fastaToRscuData(text, tableId);
+            allParsed.push({ file, data });
+        } catch (err) {
+            console.error(`Error processing ${file.name}:`, err);
+            alert(`Error processing ${file.name}: ${err.message}`);
+            return;
+        }
+    }
+
+    // The data is already in CaiCal-compatible format, merge if multiple files
+    if (allParsed.length === 1) {
+        generatePlots(allParsed);
+    } else {
+        // Multiple files: combine all data rows under the same codon/AA headers
+        // Use the first file's headers (should be the same for same genetic code)
+        const combined = {
+            file: { name: 'Combined FASTA' },
+            data: [allParsed[0].data[0], allParsed[0].data[1]]
+        };
+        for (const parsed of allParsed) {
+            // Skip header rows (first 2), add all data rows
+            for (let i = 2; i < parsed.data.length; i++) {
+                combined.data.push(parsed.data[i]);
+            }
+        }
+        generatePlots([combined]);
+    }
+}
+
+// ─── Plot Generation (shared by both pipelines) ────────────────────────────
 
 function generatePlots(datasets) {
     plotContainer.innerHTML = '';
@@ -156,10 +279,21 @@ function generatePlots(datasets) {
     // Get unique AAs and sort them alphabetically
     const uniqueAAs = [...new Set(codonInfo.map(c => c.aa))].sort();
 
-    // We will build a customized legend below the plots, so we hide standard legend
-    datasets.forEach((dataset, index) => {
-        const speciesDataRow = dataset.data[2];
-        const speciesName = speciesDataRow[0] || dataset.file.name.replace('.tsv', '');
+    // Collect all data rows from all datasets (each dataset may have multiple species)
+    const allSpeciesRows = [];
+    datasets.forEach(dataset => {
+        for (let rowIdx = 2; rowIdx < dataset.data.length; rowIdx++) {
+            allSpeciesRows.push({
+                row: dataset.data[rowIdx],
+                fileName: dataset.file.name
+            });
+        }
+    });
+
+    // Generate one plot per species row
+    allSpeciesRows.forEach((speciesEntry, index) => {
+        const speciesDataRow = speciesEntry.row;
+        const speciesName = speciesDataRow[0] || speciesEntry.fileName.replace(/\.(tsv|csv|txt|fasta|fa|fna|fas)$/i, '');
         const values = speciesDataRow.slice(1).map(v => parseFloat(v));
 
         // Group values by Codon (which maps to Amino Acid and Color Index)
@@ -247,9 +381,9 @@ function generatePlots(datasets) {
         const layout = {
             barmode: 'stack',
             showlegend: false,
-            margin: { t: 5, b: index === datasets.length - 1 ? 30 : 15, l: 30, r: 10 },
+            margin: { t: 5, b: index === allSpeciesRows.length - 1 ? 30 : 15, l: 30, r: 10 },
             xaxis: {
-                showticklabels: index === datasets.length - 1, // Only show x labels on last plot
+                showticklabels: index === allSpeciesRows.length - 1, // Only show x labels on last plot
                 tickangle: 0,
                 tickfont: { size: 10, family: 'Inter', color: textColor }
             },
