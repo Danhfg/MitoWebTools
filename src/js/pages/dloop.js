@@ -8,6 +8,36 @@ const emptyStateDLOOP = document.getElementById('emptyStateDLOOP');
 const dloopContainer = document.getElementById('dloopContainer');
 const resetBtnDLOOP = document.getElementById('resetBtnDLOOP');
 
+// Flanking gene selectors
+const upstreamSelect = document.getElementById('upstreamGene');
+const upstreamCustomInput = document.getElementById('upstreamCustom');
+const downstreamSelect = document.getElementById('downstreamGene');
+const downstreamCustomInput = document.getElementById('downstreamCustom');
+
+// Toggle custom text field visibility
+if (upstreamSelect) {
+    upstreamSelect.addEventListener('change', () => {
+        upstreamCustomInput.classList.toggle('hidden', upstreamSelect.value !== 'custom');
+    });
+}
+if (downstreamSelect) {
+    downstreamSelect.addEventListener('change', () => {
+        downstreamCustomInput.classList.toggle('hidden', downstreamSelect.value !== 'custom');
+    });
+}
+
+/**
+ * Returns the label for a flanking gene based on dropdown / custom input.
+ */
+function getFlankingLabel(selectEl, customInputEl, fallback) {
+    if (!selectEl) return fallback;
+    if (selectEl.value === 'custom') {
+        const custom = customInputEl ? customInputEl.value.trim().slice(0, 8) : '';
+        return custom || fallback;
+    }
+    return selectEl.value;
+}
+
 let selectedDloopFiles = [];
 
 // Colors inspired by the reference image
@@ -141,10 +171,12 @@ generateBtnDLOOP.addEventListener('click', async () => {
     }
 
     const viewMode = document.querySelector('input[name="dloopViewMode"]:checked').value;
-    drawDloop(allSpecies, viewMode);
+    const upLabel = getFlankingLabel(upstreamSelect, upstreamCustomInput, '12S');
+    const downLabel = getFlankingLabel(downstreamSelect, downstreamCustomInput, 'trnI');
+    drawDloop(allSpecies, viewMode, upLabel, downLabel);
 });
 
-function drawDloop(speciesList, viewMode = 'proportional') {
+function drawDloop(speciesList, viewMode = 'proportional', upstreamLabel = '12S', downstreamLabel = 'trnI') {
     dloopContainer.innerHTML = '';
 
     const isDark = document.documentElement.classList.contains('dark');
@@ -162,6 +194,10 @@ function drawDloop(speciesList, viewMode = 'proportional') {
     const yMarker = [];
     const colorMarker = [];
     const sizeMarker = [];
+
+    // Y-axis tick labels for species names (avoids overlap with srRNA)
+    const yTickVals = [];
+    const yTickText = [];
 
     // To make text inside hover distinct, we'll build a custom scatter trace for the TR circles text
     const textScatterX = [];
@@ -210,9 +246,10 @@ function drawDloop(speciesList, viewMode = 'proportional') {
         // In proportional mode, x starts at 0. In aligned, it's cumulative from colWidths.
         let virtualX = 0;
 
-        // Add Species Name Annotation on the far left
+        // Species name as annotation (supports <i> for italic)
         annotations.push({
-            x: -200, // Offset to the left
+            xref: 'paper',
+            x: -0.01,
             y: yCenter,
             text: `<i>${species.name}</i>`,
             showarrow: false,
@@ -220,17 +257,22 @@ function drawDloop(speciesList, viewMode = 'proportional') {
             font: { size: 13, color: textColor }
         });
 
-        // Draw Left Gray bar (srRNA)
-        const srRNALeft = -150;
-        const srRNARight = 0;
+        // Draw Left Gray bar (upstream flanking gene) — positioned before x=0
+        const upstreamLeft = -100;
+        const upstreamRight = 0;
         shapes.push({
             type: 'rect',
-            x0: srRNALeft, x1: srRNARight,
+            x0: upstreamLeft, x1: upstreamRight,
             y0: yCenter - 0.05, y1: yCenter + 0.05,
             fillcolor: colors.srrna_trni, line: { width: 0 }
         });
+        // Label above the upstream bar
         annotations.push({
-            x: srRNALeft, y: yCenter, text: '<b>srRNA</b>', showarrow: false, xanchor: 'right', font: { size: 10, color: mutedTextColor }
+            x: (upstreamLeft + upstreamRight) / 2,
+            y: yCenter + 0.15,
+            text: `<b>${upstreamLabel}</b>`,
+            showarrow: false,
+            font: { size: 10, color: mutedTextColor }
         });
 
         // Calculate Flanks and TRs
@@ -366,15 +408,20 @@ function drawDloop(speciesList, viewMode = 'proportional') {
             virtualX += visFlankW;
         }
 
-        // Right Gray bar (trnI)
+        // Right Gray bar (downstream flanking gene)
         shapes.push({
             type: 'rect',
             x0: virtualX, x1: virtualX + 150,
             y0: yCenter - 0.05, y1: yCenter + 0.05,
             fillcolor: colors.srrna_trni, line: { width: 0 }
         });
+        // Label above the downstream bar
         annotations.push({
-            x: virtualX + 150, y: yCenter, text: '<b>trnI</b>', showarrow: false, xanchor: 'left', font: { size: 10, color: mutedTextColor }
+            x: virtualX + 75,
+            y: yCenter + 0.15,
+            text: `<b>${downstreamLabel}</b>`,
+            showarrow: false,
+            font: { size: 10, color: mutedTextColor }
         });
 
         if (virtualX > globalMaxEnd) globalMaxEnd = virtualX;
@@ -390,7 +437,7 @@ function drawDloop(speciesList, viewMode = 'proportional') {
     const layout = {
         height: layoutHeight,
         xaxis: {
-            range: [-500, globalMaxEnd + 500],
+            range: [-200, globalMaxEnd + 500],
             showgrid: false, zeroline: false, visible: false,
             fixedrange: false
         },
@@ -399,7 +446,7 @@ function drawDloop(speciesList, viewMode = 'proportional') {
             showgrid: false, zeroline: false, visible: false,
             fixedrange: true
         },
-        margin: { l: 20, r: 20, t: 40, b: 20 },
+        margin: { l: 200, r: 20, t: 40, b: 20 },
         shapes: shapes,
         annotations: annotations,
         paper_bgcolor: 'transparent',
