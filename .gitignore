@@ -20,4 +20,6 @@ tmp/
 
 # Agent / AI files
 AGENTE.MD
+CLAUDE.MD
+GEMINI.MD
 .gemini/
