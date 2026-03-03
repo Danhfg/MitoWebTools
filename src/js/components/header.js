@@ -30,7 +30,7 @@ function initHeader(activePage, basePath = '') {
     <header class="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-50 transition-colors duration-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center gap-2">
-                <i class="fa-solid fa-dna text-primary-600 dark:text-primary-400 text-2xl"></i>
+                <img src="${basePath}src/img/mitochondria.svg" alt="MitoTools" class="w-8 h-8" style="filter:brightness(0) saturate(100%) invert(42%) sepia(93%) saturate(1352%) hue-rotate(200deg) brightness(100%) contrast(97%);">
                 <a href="${basePath}index.html"
                     class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-indigo-600 dark:from-primary-400 dark:to-indigo-400">MitoTools
                     Web</a>
