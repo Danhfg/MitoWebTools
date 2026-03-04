@@ -15,7 +15,7 @@
 
 ## 📖 About
 
-**MitoTools Web** is a static web application designed for bioinformatics researchers working with mitochondrial genomes (mitogenomes). It provides **three interactive visualization tools** that run entirely in the browser — no backend, no installation, no queues.
+**MitoTools Web** is a static web application designed for bioinformatics researchers working with mitochondrial genomes (mitogenomes). It provides **four interactive visualization tools** that run entirely in the browser — no backend, no installation, no queues.
 
 All data processing happens **client-side** using JavaScript, making it fast, private, and deployable on **GitHub Pages**.
 
@@ -24,12 +24,23 @@ All data processing happens **client-side** using JavaScript, making it fast, pr
 ## 🛠️ Available Tools
 
 ### 📊 RSCU Analysis (Relative Synonymous Codon Usage)
-- Upload multiple **TSV** files containing codon usage data
+- Upload multiple **TSV** files containing codon usage data or **FASTA** sequences
 - Generate **stacked bar charts** comparing RSCU values across species
 - Amino acids with multiple codon groups (e.g., Ser, Leu) are split into separate columns
+- Supports direct calculation from FASTA with selectable **NCBI genetic code tables**
 - Built with [Plotly.js](https://plotly.com/javascript/) for interactive visualization
 
-### 🧩 Gene Synteny
+### � Codon Usage Analysis *(New in v0.3)*
+- Unified tool supporting **three metrics**:
+  - **Codon Usage** — absolute codon counts
+  - **Codon Usage per Thousand** — frequency normalized per 1000 codons
+  - **RSCU** — Relative Synonymous Codon Usage
+- Accepts both **pre-processed TSV/CSV** files and **FASTA** sequences
+- Includes all amino acids (Met, Trp) for Codon Usage and Codon Usage per Thousand
+- Dynamic y-axis scaling based on stacked column heights
+- Supports all **NCBI translation tables** (1–33)
+
+### �🧩 Gene Synteny
 - Upload **BED** annotation files (e.g., from MITOS2)
 - Visualize **linear gene maps** of mitogenome annotations
 - Genes are displayed on positive (+) or negative (−) strands with proper coloring
@@ -42,6 +53,27 @@ All data processing happens **client-side** using JavaScript, making it fast, pr
 
 ---
 
+## 📋 Changelog
+
+### v0.3 — Codon Usage
+- **New tool:** Codon Usage Analysis page with support for Codon Usage (count), Codon Usage per Thousand (‰), and RSCU metrics
+- New calculator functions: `calculateCodonUsage()`, `calculateCodonUsagePerThousand()`, `fastaToCodonUsageData()`
+- Updated navigation header with Codon Usage link
+- New tool card on the homepage
+
+### v0.2 — FASTA Support & SVG Logo
+- Added FASTA input support for RSCU Analysis with all NCBI genetic code tables
+- Integrated vectorized SVG mitochondria logo in header and footer
+- Amino acid split for Ser (AG/UC) and Leu (CU/UU) codon groups in RSCU charts
+
+### v0.1 — Initial Release
+- RSCU Analysis with pre-processed TSV files
+- Gene Synteny visualization from BED files
+- D-Loop / Tandem Repeats analysis
+- Dark mode, responsive design, GitHub Pages deployment
+
+---
+
 ## 🏗️ Project Structure
 
 ```
@@ -49,19 +81,25 @@ MitoWebTools/
 ├── index.html                      # Home page (landing)
 ├── pages/                          # Tool pages
 │   ├── rscu.html                   # RSCU Analysis
+│   ├── codon-usage.html            # Codon Usage Analysis (CU, CU/1000, RSCU)
 │   ├── synteny.html                # Gene Synteny
 │   └── dloop.html                  # D-Loop / Tandem Repeats
 ├── src/
 │   ├── css/
 │   │   └── custom.css              # Shared styles (dropzone, animations)
+│   ├── img/
+│   │   └── mitochondria.svg        # Vectorized logo
 │   └── js/
 │       ├── tailwind-config.js      # Centralized Tailwind configuration
 │       ├── theme.js                # Dark mode management
 │       ├── components/
 │       │   ├── header.js           # Reusable navbar component
 │       │   └── footer.js           # Reusable footer component
+│       ├── utils/
+│       │   └── rscu-calculator.js  # Codon usage & RSCU calculation engine
 │       └── pages/
 │           ├── rscu.js             # RSCU chart logic
+│           ├── codon-usage.js      # Codon Usage chart logic
 │           ├── synteny.js          # Synteny map logic
 │           └── dloop.js            # D-Loop visualization logic
 ├── .gitignore
@@ -112,17 +150,29 @@ Push this repository to GitHub and enable **GitHub Pages** from the repository s
 - ✅ **Modular Architecture** — Reusable components (header, footer, theme)
 - ✅ **GitHub Pages Ready** — Deploy with zero configuration
 - ✅ **Interactive Charts** — Zoom, pan, hover with Plotly.js
+- ✅ **FASTA Support** — Calculate metrics directly from nucleotide sequences
+- ✅ **Multiple Genetic Codes** — All NCBI translation tables (1–33)
 
 ---
 
 ## 📁 Input File Formats
 
-### RSCU (`.tsv`)
-Tab-separated file with codons in the first row, amino acid letters in the second, and RSCU values per species in subsequent rows:
+### RSCU / Codon Usage (`.tsv`)
+Tab-separated file with codons in the first row, amino acid letters in the second, and values per species in subsequent rows:
 ```
 CODONS	AAA	AAC	AAG	AAT	ACA	ACC	ACG	ACT	AGA	AGC	AGG	AGT	ATA	ATC	ATG	ATT	CAA	CAC	CAG	CAT	CCA	CCC	CCG	CCT	CGA	CGC	CGG	CGT	CTA	CTC	CTG	CTT	GAA	GAC	GAG	GAT	GCA	GCC	GCG	GCT	GGA	GGC	GGG	GGT	GTA	GTC	GTG	GTT	TAC	TAT	TCA	TCC	TCG	TCT	TGA	TGC	TGG	TGT	TTA	TTC	TTG	TTT	
 AMINOACIDS	K	N	K	N	T	T	T	T	S	S	S	S	M	I	M	I	Q	H	Q	H	P	P	P	P	R	R	R	R	L	L	L	L	E	D	E	D	A	A	A	A	G	G	G	G	V	V	V	V	Y	Y	S	S	S	S	W	C	W	C	L	F	L	F	
-HM126547.1_Euphaea_formosa_mitochondrion,_complete_genome	 1.621	 0.671	 0.379	 1.329	 1.439	 0.982	 0.468	 1.111	 1.567	 1.198	 0.828	 1.065	 1.631	 0.641	 0.369	 1.359	 1.382	 0.648	 0.618	 1.352	 1.642	 1.151	 0.283	 0.925	 1.745	 0.800	 0.436	 1.018	 0.946	 0.565	 0.404	 0.946	 1.422	 0.640	 0.578	 1.360	 1.692	 1.077	 0.205	 1.026	 1.385	 0.718	 0.923	 0.974	 1.556	 0.762	 0.635	 1.048	 0.717	 1.283	 1.420	 0.843	 0.163	 0.917	 1.188	 0.842	 0.812	 1.158	 2.227	 0.624	 0.912	 1.376	
+HM126547.1_Euphaea_formosa	 1.621	 0.671	 0.379	 1.329	 1.439	 0.982	 0.468	 1.111	...
+```
+
+### FASTA (`.fasta`, `.fa`, `.fna`, `.fas`)
+Standard FASTA format with nucleotide sequences:
+```
+>Species_name_1
+ATGTTCGCCGACCGTTGACTATTCTCTACAAACCACAAAGAC...
+
+>Species_name_2
+ATGTTCATTAATCGTTGACTATTCTCAACCAATCACAAAGAT...
 ```
 
 ### Synteny (`.bed`)

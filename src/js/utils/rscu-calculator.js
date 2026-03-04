@@ -239,6 +239,23 @@ function getCanonicalCodonOrder(codonToAA) {
 }
 
 /**
+ * Get the canonical codon order including ALL amino acids (even single-codon ones).
+ * Used for Codon Usage and CU/1000 where Met and Trp should be included.
+ * @param {Object} codonToAA - Map of codon -> amino acid
+ * @returns {Array<{codon: string, aa: string}>} Ordered list
+ */
+function getCanonicalCodonOrderAll(codonToAA) {
+    const result = [];
+    for (let i = 0; i < 64; i++) {
+        const codon = BASE1[i] + BASE2[i] + BASE3[i];
+        const aa = codonToAA[codon];
+        if (aa === '*') continue; // still skip stop codons
+        result.push({ codon, aa });
+    }
+    return result;
+}
+
+/**
  * Convert FASTA text to RSCU data in the same format as CaiCal TSV output.
  * 
  * Output format (array of arrays):
@@ -288,6 +305,112 @@ function fastaToRscuData(fastaText, tableId, perSequence = true) {
     return [codonsHeader, aaHeader, ...dataRows];
 }
 
+// ─── Codon Usage Calculator ─────────────────────────────────────────────────
+
+/**
+ * Calculate raw Codon Usage (absolute counts) for each codon.
+ * Unlike RSCU, this includes ALL amino acids (even single-codon ones like Met/Trp).
+ * Stop codons are still excluded.
+ * 
+ * @param {Object} codonCounts - Map of codon -> count
+ * @param {Object} codonToAA - Map of codon -> amino acid
+ * @returns {Object} Map of codon -> raw count (0 if not observed)
+ */
+function calculateCodonUsage(codonCounts, codonToAA) {
+    const cu = {};
+    for (const [codon, aa] of Object.entries(codonToAA)) {
+        if (aa === '*') continue;
+        cu[codon] = codonCounts[codon] || 0;
+    }
+    return cu;
+}
+
+/**
+ * Calculate Codon Usage per Thousand codons.
+ * CU/1000(j) = (X_j / N_total) × 1000
+ * where N_total = total number of codons (excluding stops).
+ * 
+ * Includes ALL amino acids. Stop codons excluded.
+ * 
+ * @param {Object} codonCounts - Map of codon -> count
+ * @param {Object} codonToAA - Map of codon -> amino acid
+ * @returns {Object} Map of codon -> CU/1000 value
+ */
+function calculateCodonUsagePerThousand(codonCounts, codonToAA) {
+    const cu1000 = {};
+    // Total number of codons (excluding stops)
+    let totalCodons = 0;
+    for (const [codon, aa] of Object.entries(codonToAA)) {
+        if (aa === '*') continue;
+        totalCodons += (codonCounts[codon] || 0);
+    }
+
+    for (const [codon, aa] of Object.entries(codonToAA)) {
+        if (aa === '*') continue;
+        if (totalCodons === 0) {
+            cu1000[codon] = 0;
+        } else {
+            cu1000[codon] = ((codonCounts[codon] || 0) / totalCodons) * 1000;
+        }
+    }
+    return cu1000;
+}
+
+/**
+ * Convert FASTA text to Codon Usage data (CU, CU/1000, or RSCU).
+ * 
+ * Output format (array of arrays):
+ *   Row 0: ['Codon', codon1, codon2, ...]
+ *   Row 1: ['AA', aa1, aa2, ...]
+ *   Row 2+: [speciesName, val1, val2, ...]
+ * 
+ * @param {string} fastaText - Raw FASTA text
+ * @param {number} tableId - NCBI translation table ID
+ * @param {'cu'|'cu1000'|'rscu'} metric - Which metric to compute
+ * @param {boolean} [perSequence=true] - If true, compute per sequence
+ * @returns {Array<Array>} Data matrix
+ */
+function fastaToCodonUsageData(fastaText, tableId, metric = 'cu', perSequence = true) {
+    // For RSCU, delegate to existing function
+    if (metric === 'rscu') {
+        return fastaToRscuData(fastaText, tableId, perSequence);
+    }
+
+    const { codonToAA } = getGeneticCode(tableId);
+    const sequences = parseFasta(fastaText);
+
+    if (sequences.length === 0) {
+        throw new Error('No valid sequences found in the FASTA file.');
+    }
+
+    // CU and CU/1000 include all codons (even single-codon AAs)
+    const codonOrder = getCanonicalCodonOrderAll(codonToAA);
+
+    const codonsHeader = ['Codon', ...codonOrder.map(c => c.codon)];
+    const aaHeader = ['AA', ...codonOrder.map(c => c.aa)];
+
+    const calcFn = metric === 'cu' ? calculateCodonUsage : calculateCodonUsagePerThousand;
+
+    const dataRows = [];
+
+    if (perSequence) {
+        for (const seq of sequences) {
+            const counts = countCodons(seq.sequence);
+            const values = calcFn(counts, codonToAA);
+            const row = [seq.name, ...codonOrder.map(c => values[c.codon] !== undefined ? values[c.codon] : 0)];
+            dataRows.push(row);
+        }
+    } else {
+        const allCounts = mergeCodons(sequences.map(s => countCodons(s.sequence)));
+        const values = calcFn(allCounts, codonToAA);
+        const name = sequences.length === 1 ? sequences[0].name : `Pooled (${sequences.length} sequences)`;
+        const row = [name, ...codonOrder.map(c => values[c.codon] !== undefined ? values[c.codon] : 0)];
+        dataRows.push(row);
+    }
+
+    return [codonsHeader, aaHeader, ...dataRows];
+}
+
 // ─── Export for use in browser (global scope) ────────────────────────────────
 window.RSCUCalculator = {
     getAvailableGeneticCodes,
@@ -296,7 +419,12 @@ window.RSCUCalculator = {
     countCodons,
     mergeCodons,
     calculateRSCU,
+    calculateCodonUsage,
+    calculateCodonUsagePerThousand,
     fastaToRscuData,
+    fastaToCodonUsageData,
+    getCanonicalCodonOrder,
+    getCanonicalCodonOrderAll,
     GENETIC_CODES,
     AA_1TO3
 };
