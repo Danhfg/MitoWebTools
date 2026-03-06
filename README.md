@@ -15,7 +15,7 @@
 
 ## 📖 About
 
-**MitoTools Web** is a static web application designed for bioinformatics researchers working with mitochondrial genomes (mitogenomes). It provides **four interactive visualization tools** that run entirely in the browser — no backend, no installation, no queues.
+**MitoTools Web** is a static web application designed for bioinformatics researchers working with mitochondrial genomes (mitogenomes). It provides **five interactive visualization tools** that run entirely in the browser — no backend, no installation, no queues.
 
 All data processing happens **client-side** using JavaScript, making it fast, private, and deployable on **GitHub Pages**.
 
@@ -40,11 +40,20 @@ All data processing happens **client-side** using JavaScript, making it fast, pr
 - Dynamic y-axis scaling based on stacked column heights
 - Supports all **NCBI translation tables** (1–33)
 
-### �🧩 Gene Synteny
+### 🧩 Gene Synteny
 - Upload **BED** annotation files (e.g., from MITOS2)
 - Visualize **linear gene maps** of mitogenome annotations
 - Genes are displayed on positive (+) or negative (−) strands with proper coloring
+- Robust gene name normalization (nad1/ND1/nd1, COX1 gene, cytb/cob, etc.)
 - Includes a complete gene legend with standardized color coding
+
+### 📏 Gene Size Comparison *(New in v0.3)*
+- Upload multiple **BED** annotation files (one per species)
+- Compare **protein-coding gene sizes** across species in an interactive grid
+- Each gene column has its **own independent scale**
+- Automatic gene name normalization and fragment summing
+- Export as **high-resolution PNG** (publication quality) or **interactive HTML**
+- 13 canonical mitochondrial genes: nad1–6, nad4l, cox1–3, atp6, atp8, cob
 
 ### 🔁 D-Loop / Tandem Repeats Analysis
 - Upload **TXT** files with tandem repeat (TR) data from the control region
@@ -55,11 +64,12 @@ All data processing happens **client-side** using JavaScript, making it fast, pr
 
 ## 📋 Changelog
 
-### v0.3 — Codon Usage
+### v0.3 — Codon Usage & Gene Size
 - **New tool:** Codon Usage Analysis page with support for Codon Usage (count), Codon Usage per Thousand (‰), and RSCU metrics
-- New calculator functions: `calculateCodonUsage()`, `calculateCodonUsagePerThousand()`, `fastaToCodonUsageData()`
-- Updated navigation header with Codon Usage link
-- New tool card on the homepage
+- **New tool:** Gene Size Comparison — horizontal bar grid from BED files with publication-quality PNG/HTML export
+- New BED parser utility (`bed-parser.js`) with robust gene name normalization
+- Improved gene name handling in Gene Synteny (supports `ND2 gene`, `CYTB gene`, `tRNA-Ile`, etc.)
+- Updated navigation header and homepage cards
 
 ### v0.2 — FASTA Support & SVG Logo
 - Added FASTA input support for RSCU Analysis with all NCBI genetic code tables
@@ -82,6 +92,7 @@ MitoWebTools/
 ├── pages/                          # Tool pages
 │   ├── rscu.html                   # RSCU Analysis
 │   ├── codon-usage.html            # Codon Usage Analysis (CU, CU/1000, RSCU)
+│   ├── gene-size.html              # Gene Size Comparison
 │   ├── synteny.html                # Gene Synteny
 │   └── dloop.html                  # D-Loop / Tandem Repeats
 ├── src/
@@ -96,10 +107,12 @@ MitoWebTools/
 │       │   ├── header.js           # Reusable navbar component
 │       │   └── footer.js           # Reusable footer component
 │       ├── utils/
-│       │   └── rscu-calculator.js  # Codon usage & RSCU calculation engine
+│       │   ├── rscu-calculator.js  # Codon usage & RSCU calculation engine
+│       │   └── bed-parser.js       # BED file parser & gene name normalization
 │       └── pages/
 │           ├── rscu.js             # RSCU chart logic
 │           ├── codon-usage.js      # Codon Usage chart logic
+│           ├── gene-size.js        # Gene Size comparison logic
 │           ├── synteny.js          # Synteny map logic
 │           └── dloop.js            # D-Loop visualization logic
 ├── .gitignore
