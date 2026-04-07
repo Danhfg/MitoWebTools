@@ -15,7 +15,7 @@
 
 ## 📖 About
 
-**MitoTools Web** is a static web application designed for bioinformatics researchers working with mitochondrial genomes (mitogenomes). It provides **five interactive visualization tools** that run entirely in the browser — no backend, no installation, no queues.
+**MitoTools Web** is a static web application designed for bioinformatics researchers working with mitochondrial genomes (mitogenomes). It provides **six interactive visualization tools** that run entirely in the browser — no backend, no installation, no queues.
 
 All data processing happens **client-side** using JavaScript, making it fast, private, and deployable on **GitHub Pages**.
 
@@ -55,6 +55,17 @@ All data processing happens **client-side** using JavaScript, making it fast, pr
 - Export as **high-resolution PNG** (publication quality) or **interactive HTML**
 - 13 canonical mitochondrial genes: nad1–6, nad4l, cox1–3, atp6, atp8, cob
 
+### 📈 Ka/Ks Analysis *(New in v0.3)*
+- Upload **FASTA** genome files and **BED** annotations (one pair per species)
+- Calculates **Ka** (nonsynonymous), **Ks** (synonymous), and **Ka/Ks** ratios using the **Nei-Gojobori (1986)** method with Jukes-Cantor correction — entirely client-side
+- Three visualization modes:
+  - **Boxplot** — Ka/Ks ratio distribution per gene across all pairwise comparisons
+  - **Bar Chart** — mean Ka, Ks, and Ka/Ks grouped by gene
+  - **Sankey Diagram** — Start/Stop codon usage (Initiation Codon → PCG → Termination Codon)
+- Supports all **NCBI genetic code tables** (1–33)
+- Handles incomplete stop codons (T--, TA-) common in mitogenomes
+- Publication-quality **PNG** and interactive **HTML** export
+
 ### 🔁 D-Loop / Tandem Repeats Analysis
 - Upload **TXT** files with tandem repeat (TR) data from the control region
 - Visualize **flanking blocks** and **TR circles** with copy number representation
@@ -64,10 +75,11 @@ All data processing happens **client-side** using JavaScript, making it fast, pr
 
 ## 📋 Changelog
 
-### v0.3 — Codon Usage & Gene Size
+### v0.3 — Codon Usage, Gene Size & Ka/Ks
 - **New tool:** Codon Usage Analysis page with support for Codon Usage (count), Codon Usage per Thousand (‰), and RSCU metrics
 - **New tool:** Gene Size Comparison — horizontal bar grid from BED files with publication-quality PNG/HTML export
-- New BED parser utility (`bed-parser.js`) with robust gene name normalization
+- **New tool:** Ka/Ks Analysis — Nei-Gojobori (1986) client-side computation with boxplot, bar chart, and Sankey diagram visualizations
+- New utilities: `bed-parser.js` (BED parsing + gene normalization) and `kaks-calculator.js` (Ka/Ks engine)
 - Improved gene name handling in Gene Synteny (supports `ND2 gene`, `CYTB gene`, `tRNA-Ile`, etc.)
 - Updated navigation header and homepage cards
 
@@ -93,6 +105,7 @@ MitoWebTools/
 │   ├── rscu.html                   # RSCU Analysis
 │   ├── codon-usage.html            # Codon Usage Analysis (CU, CU/1000, RSCU)
 │   ├── gene-size.html              # Gene Size Comparison
+│   ├── kaks.html                   # Ka/Ks Analysis
 │   ├── synteny.html                # Gene Synteny
 │   └── dloop.html                  # D-Loop / Tandem Repeats
 ├── src/
@@ -108,11 +121,13 @@ MitoWebTools/
 │       │   └── footer.js           # Reusable footer component
 │       ├── utils/
 │       │   ├── rscu-calculator.js  # Codon usage & RSCU calculation engine
-│       │   └── bed-parser.js       # BED file parser & gene name normalization
+│       │   ├── bed-parser.js       # BED file parser & gene name normalization
+│       │   └── kaks-calculator.js  # Ka/Ks engine (Nei-Gojobori 1986)
 │       └── pages/
 │           ├── rscu.js             # RSCU chart logic
 │           ├── codon-usage.js      # Codon Usage chart logic
 │           ├── gene-size.js        # Gene Size comparison logic
+│           ├── kaks.js             # Ka/Ks analysis logic
 │           ├── synteny.js          # Synteny map logic
 │           └── dloop.js            # D-Loop visualization logic
 ├── .gitignore
