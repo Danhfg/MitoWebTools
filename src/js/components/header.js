@@ -15,6 +15,7 @@ function initHeader(activePage, basePath = '') {
         { id: 'rscu', label: 'RSCU Analysis', href: `${basePath}pages/rscu.html` },
         { id: 'codon-usage', label: 'Codon Usage', href: `${basePath}pages/codon-usage.html` },
         { id: 'gene-size', label: 'Gene Size', href: `${basePath}pages/gene-size.html` },
+        { id: 'kaks', label: 'Ka/Ks', href: `${basePath}pages/kaks.html` },
         { id: 'synteny', label: 'Gene Synteny', href: `${basePath}pages/synteny.html` },
         { id: 'dloop', label: 'D-Loop', href: `${basePath}pages/dloop.html` },
         { id: 'about', label: 'About', href: '#' },
