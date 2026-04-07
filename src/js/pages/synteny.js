@@ -36,8 +36,8 @@ const geneColors = {
 
 // Aliases mapped from MITOS output to correct visual name
 const geneAliases = {
-    '12s': '12S', 'rrns': '12S',
-    '16s': '16S', 'rrnl': '16S',
+    '12s': '12S', 'rrns': '12S', '12srrna': '12S', '12srna': '12S',
+    '16s': '16S', 'rrnl': '16S', '16srrna': '16S', '16srna': '16S',
     'nad1': 'ND1', 'nd1': 'ND1',
     'nad2': 'ND2', 'nd2': 'ND2',
     'nad3': 'ND3', 'nd3': 'ND3',
@@ -45,23 +45,39 @@ const geneAliases = {
     'nad4l': 'ND4L', 'nd4l': 'ND4L',
     'nad5': 'ND5', 'nd5': 'ND5',
     'nad6': 'ND6', 'nd6': 'ND6',
-    'cox1': 'COX1', 'coi': 'COX1',
-    'cox2': 'COX2', 'coii': 'COX2',
-    'cox3': 'COX3', 'coiii': 'COX3',
-    'atp6': 'ATP6', 'atp6-a': 'ATP6', 'atp6-b': 'ATP6',
-    'atp8': 'ATP8',
-    'cytb': 'CYTB', 'cob': 'CYTB',
+    'cox1': 'COX1', 'coi': 'COX1', 'co1': 'COX1',
+    'cox2': 'COX2', 'coii': 'COX2', 'co2': 'COX2',
+    'cox3': 'COX3', 'coiii': 'COX3', 'co3': 'COX3',
+    'atp6': 'ATP6', 'atpase6': 'ATP6',
+    'atp8': 'ATP8', 'atpase8': 'ATP8',
+    'cytb': 'CYTB', 'cob': 'CYTB', 'cyb': 'CYTB',
     'ol': 'OL', 'rep_ori': 'OL',
-    'd-loop': 'OH', 'cr': 'OH'
+    'd-loop': 'OH', 'dloop': 'OH', 'cr': 'OH', 'oh': 'OH',
+    'a+trichregion': 'OH',
 };
 
 // Returns standard name and its defined color
 function getGeneInfo(rawName) {
-    let lowerName = rawName.toLowerCase();
+    // Remove parenthetical content like (gaa)
+    let lowerName = rawName.replace(/\([^)]*\)/, '').trim().toLowerCase();
 
-    // Check if it's a tRNA (trn...)
+    // Remove " gene" suffix (e.g. "ND2 gene" → "nd2")
+    lowerName = lowerName.replace(/\s+gene$/i, '').trim();
+
+    // Remove trailing suffixes like _0, _1, _a, -0, -1 (duplicate annotations)
+    lowerName = lowerName.replace(/[-_][0-9a-z]+$/, '');
+
+    // Remove spaces (e.g. "nd4 l" → "nd4l")
+    lowerName = lowerName.replace(/\s+/g, '');
+
+    // Check if it's a tRNA (trn... or trna-)
     if (lowerName.startsWith('trn')) {
         return { standardName: rawName, color: geneColors['tRNAs'], group: 'tRNAs' };
+    }
+
+    // Check if it's a source or misc annotation
+    if (lowerName.startsWith('source') || lowerName.startsWith('misc') || lowerName.startsWith('repeat')) {
+        return { standardName: rawName, color: '#dddddd', group: 'Others' };
     }
 
     let mapped = geneAliases[lowerName];

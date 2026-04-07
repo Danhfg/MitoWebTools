@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Codon Usage Analysis - MitoTools Web</title>
+    <meta name="description"
+        content="Analyze Codon Usage, Codon Usage per Thousand, and RSCU from mitochondrial sequences. Upload FASTA or pre-processed files.">
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../src/js/tailwind-config.js"></script>
+    <!-- Theme (early load to prevent flash) -->
+    <script src="../src/js/theme.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="../src/css/custom.css">
+    <!-- Dependências JS -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+</head>
+
+<body
+    class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 font-sans flex flex-col min-h-screen selection:bg-primary-500 selection:text-white transition-colors duration-200">
+
+    <!-- Header (injected by JS) -->
+    <div id="header-root"></div>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
+
+        <!-- Header da Ferramenta -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Codon Usage Charts</h1>
+            <p class="text-gray-500 dark:text-gray-400 mt-2 max-w-3xl">Generate interactive charts to analyze
+                Codon Usage (CU), Codon Usage per Thousand (CU/1000), or Relative Synonymous Codon Usage (RSCU)
+                across multiple species. Upload pre-processed files or calculate directly from FASTA sequences.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+
+            <!-- Sidebar / Upload Area -->
+            <div class="lg:col-span-1 space-y-6">
+
+                <div
+                    class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 transition-colors duration-200">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-cloud-arrow-up text-primary-500 dark:text-primary-400"></i> Input Mode
+                    </h2>
+
+                    <!-- Mode Toggle -->
+                    <div id="modeToggle" class="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1 mb-4">
+                        <button type="button" data-mode="preprocessed"
+                            class="mode-btn flex-1 text-xs font-semibold py-2 px-3 rounded-md transition-all duration-200 bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm">
+                            <i class="fa-solid fa-table mr-1"></i> Pre-processed
+                        </button>
+                        <button type="button" data-mode="fasta"
+                            class="mode-btn flex-1 text-xs font-semibold py-2 px-3 rounded-md transition-all duration-200 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+                            <i class="fa-solid fa-dna mr-1"></i> FASTA
+                        </button>
+                    </div>
+
+                    <!-- Metric Selector -->
+                    <div class="mb-4">
+                        <label for="metricSelect"
+                            class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+                            <i class="fa-solid fa-chart-simple mr-1"></i> Metric
+                        </label>
+                        <select id="metricSelect"
+                            class="w-full text-xs bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors">
+                            <option value="cu">Codon Usage (Count)</option>
+                            <option value="cu1000">Codon Usage per Thousand (‰)</option>
+                            <option value="rscu" selected>RSCU</option>
+                        </select>
+                    </div>
+
+                    <!-- Genetic Code Selector (FASTA mode only) -->
+                    <div id="geneticCodeSection" class="mb-4 hidden">
+                        <label for="geneticCodeSelect"
+                            class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+                            <i class="fa-solid fa-code mr-1"></i> Genetic Code Table
+                        </label>
+                        <select id="geneticCodeSelect"
+                            class="w-full text-xs bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors">
+                            <!-- Options populated by JS -->
+                        </select>
+                        <p class="text-[10px] text-gray-400 dark:text-gray-500 mt-1">NCBI Translation Table for your
+                            organism.</p>
+                    </div>
+
+                    <!-- Dropzone -->
+                    <div id="dropzone"
+                        class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-6 text-center cursor-pointer hover:border-primary-500 dark:hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-gray-700 transition-colors flex flex-col items-center justify-center gap-3">
+                        <input type="file" id="fileInput" multiple accept=".tsv,.csv,.txt" class="hidden">
+                        <div
+                            class="w-12 h-12 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-300 rounded-full flex items-center justify-center text-xl">
+                            <i id="dropzoneIcon" class="fa-regular fa-folder-open"></i>
+                        </div>
+                        <div>
+                            <p id="dropzoneText" class="text-sm font-medium text-gray-700 dark:text-gray-200">Click or
+                                drag & drop</p>
+                            <p id="dropzoneHint" class="text-xs text-gray-400 dark:text-gray-500 mt-1">TSV, CSV or TXT
+                                only</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lista de Arquivos (Escondida por padrão) -->
+                <div id="fileList"
+                    class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 hidden transition-all duration-200">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Selected Files</h3>
+                        <span id="fileCount"
+                            class="bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+                    </div>
+
+                    <ul id="filesUl"
+                        class="space-y-2 max-h-48 overflow-y-auto no-scrollbar mb-4 border-t border-b border-gray-100 dark:border-gray-700 py-2">
+                    </ul>
+
+                    <button id="generateBtn" disabled
+                        class="w-full bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 text-white font-medium py-2.5 rounded-lg shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-chart-line"></i> Generate Charts
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Results Area -->
+            <div class="lg:col-span-3">
+
+                <!-- Estado Vazio -->
+                <div id="emptyState"
+                    class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 border-dashed h-full min-h-[500px] flex flex-col items-center justify-center text-gray-400 transition-colors duration-200">
+                    <i class="fa-solid fa-chart-area text-6xl mb-4 text-gray-200 dark:text-gray-600"></i>
+                    <p class="text-lg font-medium text-gray-500 dark:text-gray-400">No data processed</p>
+                    <p class="text-sm text-gray-400 dark:text-gray-500 max-w-md text-center mt-2">Add your files on
+                        the sidebar and click "Generate" to view results here.</p>
+                </div>
+
+                <!-- Resultados -->
+                <div id="resultsSection"
+                    class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hidden transition-colors duration-200">
+                    <div
+                        class="flex items-center justify-between mb-6 border-b border-gray-100 dark:border-gray-700 pb-4">
+                        <h2 id="resultsTitle" class="text-xl font-bold text-gray-900 dark:text-white"><i
+                                class="fa-solid fa-chart-column text-primary-500 dark:text-primary-400 mr-2"></i>
+                            Results</h2>
+                        <button id="resetBtn"
+                            class="text-sm text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 font-medium transition-colors flex items-center gap-1">
+                            <i class="fa-solid fa-rotate-right"></i> Clear All
+                        </button>
+                    </div>
+
+                    <div id="plotContainer" class="w-full"></div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer (injected by JS) -->
+    <div id="footer-root"></div>
+
+    <!-- Shared Components -->
+    <script src="../src/js/components/header.js"></script>
+    <script src="../src/js/components/footer.js"></script>
+    <!-- Calculator Module -->
+    <script src="../src/js/utils/rscu-calculator.js"></script>
+    <!-- Page-specific Script -->
+    <script src="../src/js/pages/codon-usage.js"></script>
+    <script>
+        initHeader('codon-usage', '../');
+        initFooter('../');
+        initThemeToggle();
+    </script>
+</body>
+
+</html>
